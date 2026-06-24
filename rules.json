@@ -28,7 +28,6 @@
       ]
     },
     "condition": {
-      "urlFilter": "|http",
       "regexFilter": "\\.(m3u8|ts)(\\?|$)",
       "resourceTypes": [
         "xmlhttprequest",

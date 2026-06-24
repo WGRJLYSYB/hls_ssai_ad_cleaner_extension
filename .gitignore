@@ -1,0 +1,57 @@
+# 浏览器扩展项目 .gitignore
+
+# IDE 和编辑器配置
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Node.js 依赖（如果有）
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# 构建输出目录
+dist/
+build/
+extension-build/
+
+# 浏览器扩展运行时生成的文件夹
+_metadata/
+
+# 临时文件和缓存
+*.tmp
+*.temp
+.cache/
+Thumbs.db
+
+# 日志文件
+*.log
+logs/
+
+# 环境变量文件
+.env
+.env.local
+.env.*.local
+
+# 测试覆盖率报告
+coverage/
+.nyc_output/
+
+# 浏览器扩展开发相关
+# 如果打包后的扩展文件
+*.crx
+*.pem
+
+# 截图和测试数据（可选，根据需要调整）
+# screenshots/
+# test-data/
+
+# OS 特定文件
+desktop.ini
+ehthumbs.db

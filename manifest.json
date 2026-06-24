@@ -2,15 +2,30 @@
   "manifest_version": 3,
   "name": "葡萄广告拦截器",
   "version": "3.4",
-  "description": "专门针对 HLS (m3u8) 视频流的 SSAI 广告拦截工具。利用"递归 Blob 代理"技术和"动态帧率指纹"算法，深度净化主索引与变体索引，无损过滤隐藏广告。",
+  "description": "专门针对 HLS (m3u8) 视频流的 SSAI 广告拦截工具。利用递归 Blob 代理技术和动态帧率指纹算法，深度净化主索引与变体索引，无损过滤隐藏广告。",
   "icons": {
     "32": "icon_32.png",
     "64": "icon_64.png",
     "128": "icon_128.png"
   },
+  "permissions": [
+    "declarativeNetRequest"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "declarative_net_request": {
+    "rule_resources": [{
+      "id": "ruleset_cors",
+      "enabled": true,
+      "path": "rules.json"
+    }]
+  },
   "content_scripts": [
     {
-      "matches": ["*://*/*"],
+      "matches": [
+        "*://*/*"
+      ],
       "exclude_matches": [
         "*://*.youtube.com/*",
         "*://*.bilibili.com/*",
@@ -41,11 +56,15 @@
         "*://*.facebook.com/*",
         "*://*.instagram.com/*"
       ],
-      "js": ["loader.js"],
+      "js": [
+        "loader.js"
+      ],
       "run_at": "document_start"
     },
     {
-      "matches": ["*://*/*"],
+      "matches": [
+        "*://*/*"
+      ],
       "exclude_matches": [
         "*://*.youtube.com/*",
         "*://*.bilibili.com/*",
@@ -76,15 +95,21 @@
         "*://*.facebook.com/*",
         "*://*.instagram.com/*"
       ],
-      "js": ["content.js"],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_start",
       "world": "MAIN"
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["lib/hls.min.js"],
-      "matches": ["*://*/*"]
+      "resources": [
+        "lib/hls.min.js"
+      ],
+      "matches": [
+        "*://*/*"
+      ]
     }
   ]
 }

@@ -1,0 +1,16 @@
+{
+  "name": "hls-ssai-ad-cleaner",
+  "version": "1.0.0",
+  "description": "HLS SSAI Ad Cleaner - Browser Extension for removing ads from HLS streams",
+  "scripts": {
+    "obfuscate": "node build/obfuscate.js",
+    "build": "node build/build.js",
+    "package": "npm run obfuscate && npm run build",
+    "dev": "echo '直接加载项目根目录进行开发，代码不会被混淆'",
+    "clean": "node -e \"const fs=require('fs'); const path=require('path'); const dist=path.join(__dirname,'dist'); if(fs.existsSync(dist)){fs.readdirSync(dist).forEach(f=>fs.rmSync(path.join(dist,f),{recursive:true,force:true})); console.log('✅ 已清空 dist/ 目录内容')} else {console.log('ℹ️  dist/ 目录不存在')}\""
+  },
+  "devDependencies": {
+    "archiver": "^7.0.0",
+    "terser": "^5.31.0"
+  }
+}

@@ -43,3 +43,31 @@ logs/
 # QUICKSTART.md
 # README_BUILD.md
 # IMPLEMENTATION_SUMMARY.md
+
+# Build output (混淆后的构建输出)
+dist/
+
+# Dependencies (依赖文件夹)
+node_modules/
+
+# IDE configurations (IDE 配置文件)
+.vscode/
+*.code-workspace
+*.code-workspace.backup
+
+# Browser metadata (浏览器自动生成的元数据)
+_metadata/
+
+# Version control (版本控制目录)
+.git/
+
+# System files (系统文件)
+.DS_Store
+Thumbs.db
+
+# Log files (日志文件)
+*.log
+
+# Temporary files (临时文件)
+*.tmp
+*.swp

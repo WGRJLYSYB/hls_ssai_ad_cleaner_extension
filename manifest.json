@@ -1,15 +1,20 @@
 {
   "manifest_version": 3,
-  "name": "葡萄广告拦截器",
-  "version": "3.4",
-  "description": "专门针对 HLS (m3u8) 视频流的 SSAI 广告拦截工具。利用递归 Blob 代理技术和动态帧率指纹算法，深度净化主索引与变体索引，无损过滤隐藏广告。",
+  "name": "__MSG_extension_name__",
+  "version": "3.5",
+  "description": "__MSG_extension_description__",
+  "default_locale": "zh_CN",
   "icons": {
     "32": "assets/icons/icon_32.png",
     "64": "assets/icons/icon_64.png",
     "128": "assets/icons/icon_128.png"
   },
   "permissions": [
-    "declarativeNetRequest"
+    "declarativeNetRequest",
+    "storage",
+    "tabs",
+    "scripting",
+    "webNavigation"
   ],
   "host_permissions": [
     "<all_urls>"
@@ -21,27 +26,23 @@
       "path": "rules.json"
     }]
   },
+  "action": {
+    "default_title": "__MSG_extension_name__",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
       "matches": [
-        "*://*/*"
+        "<all_urls>"
       ],
-      "exclude_matches": [],
       "js": [
-        "src/loader.js"
+        "content-bootstrap.js"
       ],
-      "run_at": "document_start"
-    },
-    {
-      "matches": [
-        "*://*/*"
-      ],
-      "exclude_matches": [],
-      "js": [
-        "src/content.js"
-      ],
-      "run_at": "document_start",
-      "world": "MAIN"
+      "run_at": "document_idle",
+      "all_frames": false
     }
   ],
   "web_accessible_resources": [

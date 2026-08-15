@@ -1,0 +1,38 @@
+{
+  "extension_name": {
+    "message": "HLS SSAI Ad Cleaner"
+  },
+  "extension_description": {
+    "message": "Cleans HLS ad segments and hides SSAI ad blocks in browser video streams."
+  },
+  "popup_title": {
+    "message": "Site control"
+  },
+  "popup_current_site": {
+    "message": "Current site"
+  },
+  "popup_enabled": {
+    "message": "ON"
+  },
+  "popup_disabled": {
+    "message": "OFF"
+  },
+  "popup_site_state": {
+    "message": "SITE OFF"
+  },
+  "popup_global_state": {
+    "message": "GLOBAL OFF"
+  },
+  "popup_enabled_hint": {
+    "message": "Enabled and will clean HLS ads on this page."
+  },
+  "popup_site_hint": {
+    "message": "This site is disabled, but other sites remain enabled."
+  },
+  "popup_global_hint": {
+    "message": "All pages are currently disabled."
+  },
+  "popup_unknown_site": {
+    "message": "unknown site"
+  }
+}

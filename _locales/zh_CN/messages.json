@@ -1,0 +1,38 @@
+{
+  "extension_name": {
+    "message": "葡萄广告拦截器"
+  },
+  "extension_description": {
+    "message": "清洗 HLS 广告片段，过滤 SSAI 广告区块，保护流媒体播放体验。"
+  },
+  "popup_title": {
+    "message": "站点控制"
+  },
+  "popup_current_site": {
+    "message": "当前站点"
+  },
+  "popup_enabled": {
+    "message": "启用"
+  },
+  "popup_disabled": {
+    "message": "禁用"
+  },
+  "popup_site_state": {
+    "message": "站点已禁用"
+  },
+  "popup_global_state": {
+    "message": "全局已禁用"
+  },
+  "popup_enabled_hint": {
+    "message": "当前站点已启用，页面上的 HLS 广告会被清洗。"
+  },
+  "popup_site_hint": {
+    "message": "当前站点已禁用，但其他站点仍然保持启用。"
+  },
+  "popup_global_hint": {
+    "message": "当前已全局禁用，所有页面都会跳过广告清洗。"
+  },
+  "popup_unknown_site": {
+    "message": "未知站点"
+  }
+}

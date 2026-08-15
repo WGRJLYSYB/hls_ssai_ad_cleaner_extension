@@ -173,13 +173,18 @@ function prepareDistDirectory() {
     
     // 需要直接复制的文件（从项目根目录）
     const staticFiles = [
-        'rules.json'
+        'rules.json',
+        'popup.html',
+        'popup.js',
+        'background.js',
+        'content-bootstrap.js'
     ];
     
     // 需要直接复制的目录
     const staticDirs = [
         'lib',
-        'assets'
+        'assets',
+        '_locales'
     ];
     
     // 创建 src/ 目录结构（用于存放混淆后的 JS 文件）

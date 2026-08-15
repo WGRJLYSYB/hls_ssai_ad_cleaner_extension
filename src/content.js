@@ -11,16 +11,99 @@
 (function () {
     'use strict';
 
+    if (window.__hlsCleanerContentInjected) {
+        console.log('[葡萄AdCleaner][content] 已注入过，跳过重复执行');
+        return;
+    }
+    window.__hlsCleanerContentInjected = true;
+
     const LOG_PREFIX = '[葡萄AdCleaner]';
+    const STORAGE_KEY = 'hlsAdCleanerDisabledSites';
+    const GLOBAL_STORAGE_KEY = 'hlsAdCleanerGlobalDisabled';
     const oldXhrOpen = XMLHttpRequest.prototype.open;
     const oldFetch = window.fetch;
     const ourBlobs = new Set();
+    let disableMode = 'on';
+
+    function getSiteKeyFromUrl(url) {
+        if (!url) return '';
+        try {
+            const parsed = new URL(url);
+            return parsed.hostname.replace(/^www\./i, '').toLowerCase();
+        } catch (error) {
+            return String(url)
+                .replace(/^https?:\/\//i, '')
+                .split('/')[0]
+                .replace(/^www\./i, '')
+                .toLowerCase();
+        }
+    }
+
+    function readDisableModeFromDom() {
+        const mode = document.documentElement.dataset.hlsCleanerMode || 'on';
+        disableMode = (mode === 'site' || mode === 'global' || mode === 'on') ? mode : 'on';
+        if (disableMode !== 'on') {
+            console.log(`${LOG_PREFIX} 当前状态已从 DOM 注入读取: ${disableMode}`);
+        }
+    }
+
+    function applyDisableMode(mode) {
+        disableMode = (mode === 'site' || mode === 'global' || mode === 'on') ? mode : 'on';
+        document.documentElement.dataset.hlsCleanerMode = disableMode;
+        if (disableMode !== 'on') {
+            console.log(`${LOG_PREFIX} 当前禁用模式已生效: ${disableMode}`);
+        }
+    }
+
+    function updateDisableModeState() {
+        if (!chrome || !chrome.storage || !chrome.storage.local) {
+            readDisableModeFromDom();
+            return;
+        }
+
+        const siteKey = getSiteKeyFromUrl(window.location.href);
+        chrome.storage.local.get([STORAGE_KEY, GLOBAL_STORAGE_KEY], (result) => {
+            const disabledSites = result && result[STORAGE_KEY] ? result[STORAGE_KEY] : {};
+            const globalDisabled = Boolean(result && result[GLOBAL_STORAGE_KEY]);
+            const siteDisabled = Boolean(siteKey && disabledSites[siteKey]);
+            applyDisableMode(globalDisabled ? 'global' : (siteDisabled ? 'site' : 'on'));
+        });
+    }
+
+    console.log(`${LOG_PREFIX}[content] init -> url=${location.href} startMode=${disableMode}`);
+    readDisableModeFromDom();
+    updateDisableModeState();
+    console.log(`${LOG_PREFIX}[content] after read -> currentMode=${disableMode}`);
+
+    if (chrome && chrome.runtime && chrome.runtime.onMessage) {
+        chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+            if (message && message.type === 'setCleanerMode') {
+                applyDisableMode(message.mode || 'on');
+                sendResponse({ ok: true, mode: disableMode });
+                return true;
+            }
+            return false;
+        });
+    }
+
+    if (chrome && chrome.storage && chrome.storage.onChanged) {
+        chrome.storage.onChanged.addListener((changes, areaName) => {
+            if (areaName === 'local' && (changes[STORAGE_KEY] || changes[GLOBAL_STORAGE_KEY])) {
+                updateDisableModeState();
+            }
+        });
+    }
 
     /**
      * 深度净化核心逻辑
      * 原理：拦截主索引，同步递归净化所有子资源并转换为 Blob URL，从而绕过内核原生请求限制。
      */
     function getPurifiedUrlSync(url) {
+        if (disableMode !== 'on') {
+            console.log(`${LOG_PREFIX}[content] 进入净化前已禁用，直接放行: mode=${disableMode}, url=${url}, host=${location.hostname}`);
+            return url;
+        }
+        console.log(`${LOG_PREFIX}[content] 进入净化: url=${url}, mode=${disableMode}`);
         if (!url || typeof url !== 'string' || url.startsWith('blob:') || url.startsWith('data:')) return url;
         if (!url.includes('m3u8')) return url;
 
@@ -162,7 +245,7 @@
     }
 
     XMLHttpRequest.prototype.open = function (m, url, ...args) {
-        if (!this.isInternalRequest && typeof url === 'string' && url.includes('m3u8')) {
+        if (disableMode === 'on' && !this.isInternalRequest && typeof url === 'string' && url.includes('m3u8')) {
             url = getPurifiedUrlSync(url);
         }
         return oldXhrOpen.apply(this, [m, url, ...args]);
@@ -170,7 +253,7 @@
 
     window.fetch = function (input, init) {
         let url = (input instanceof Request) ? input.url : String(input);
-        if (!init?.isInternal && url.includes('m3u8') && !url.startsWith('blob:')) {
+        if (disableMode === 'on' && !init?.isInternal && url.includes('m3u8') && !url.startsWith('blob:')) {
             url = getPurifiedUrlSync(url);
             input = (input instanceof Request) ? new Request(url, input) : url;
         }
@@ -178,6 +261,10 @@
     };
 
     function injectHlsJs(el, m3u8Url) {
+        if (disableMode !== 'on') {
+            console.log(`${LOG_PREFIX} 当前模式已禁用，跳过 hls.js 接管 (${disableMode})`);
+            return true;
+        }
         const videoEl = el.tagName === 'VIDEO' ? el : el.parentElement;
         if (!videoEl || videoEl.tagName !== 'VIDEO') return false;
         if (videoEl.__hls_hijacked) return true;

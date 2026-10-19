@@ -1,6 +1,6 @@
 # 🍇 葡萄广告拦截器 (HLS SSAI Ad Cleaner)
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-AGPLv3-blue.svg)](LICENSE)
 [![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-green.svg)](https://developer.chrome.com/docs/extensions)
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-orange.svg)](https://developer.chrome.com/docs/extensions/mv3/intro/)
 
@@ -178,7 +178,14 @@ npm run clean
 
 ## 📄 许可证
 
-本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件
+本项目采用 **GNU Affero General Public License v3.0（AGPLv3）** 开源。
+
+简单说明：
+1. 你可以自由使用、修改、分发本项目代码。
+2. 如果**修改本项目后，部署在公网对外提供网络服务**，你必须向使用者公开修改后的完整源码。
+3. 仅通过网络API调用本项目，而不复制、修改本项目源码的独立程序，不受本协议约束，可保持闭源。
+
+详见 [LICENSE](LICENSE) 文件
 
 ## ⚠️ 免责声明
 

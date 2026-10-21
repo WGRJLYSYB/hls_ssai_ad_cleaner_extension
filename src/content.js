@@ -34,6 +34,52 @@ See LICENSE file in repository root for full license text.
     const ourBlobs = new Set();
     let disableMode = 'on';
 
+    function extractBlobUrl(url) {
+        if (!url || typeof url !== 'string') return url;
+        if (ourBlobs.has(url)) return url;
+
+        for (const blobUrl of ourBlobs) {
+            if (url.includes(blobUrl)) return blobUrl;
+        }
+
+        let target = url;
+        if (target.includes('blob%3A') || target.includes('blob%3a')) {
+            try {
+                target = decodeURIComponent(target);
+            } catch (error) {
+                console.warn(`${LOG_PREFIX} Blob URL 解码失败:`, error);
+            }
+            for (const blobUrl of ourBlobs) {
+                if (target.includes(blobUrl)) return blobUrl;
+            }
+        }
+
+        const match = target.match(/(blob:https?:\/\/[^\s"'?#]+)/i);
+        return match ? match[1] : url;
+    }
+
+    function toAbsoluteUrl(uri, baseUrl) {
+        if (!uri || typeof uri !== 'string') return uri;
+        const trimmed = uri.trim();
+        if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('blob:') || trimmed.startsWith('data:')) {
+            return uri;
+        }
+        if (/^https?:\/\//i.test(trimmed)) return trimmed;
+        try {
+            return new URL(trimmed, baseUrl).href;
+        } catch (error) {
+            console.warn(`${LOG_PREFIX} 子资源 URL 解析失败:`, { uri, baseUrl, error });
+            return uri;
+        }
+    }
+
+    function resolveTagUris(line, baseUrl) {
+        if (!line || typeof line !== 'string' || !line.includes('URI=')) return line;
+        return line.replace(/URI="([^"]+)"/g, (match, uri) => {
+            return `URI="${toAbsoluteUrl(uri, baseUrl)}"`;
+        });
+    }
+
     function getSiteKeyFromUrl(url) {
         if (!url) return '';
         try {
@@ -113,7 +159,9 @@ See LICENSE file in repository root for full license text.
             return url;
         }
         console.log(`${LOG_PREFIX}[content] 进入净化: url=${url}, mode=${disableMode}`);
-        if (!url || typeof url !== 'string' || url.startsWith('blob:') || url.startsWith('data:')) return url;
+        if (!url || typeof url !== 'string') return url;
+        url = extractBlobUrl(url);
+        if (url.startsWith('blob:') || url.startsWith('data:')) return url;
         if (!url.includes('m3u8')) return url;
 
         try {
@@ -133,8 +181,9 @@ See LICENSE file in repository root for full license text.
                     for (let line of lines) {
                         let t = line.trim();
                         if (t && !t.startsWith('#')) {
-                            const absUrl = new URL(t, url).href;
-                            newLines.push(getPurifiedUrlSync(absUrl));
+                            newLines.push(toAbsoluteUrl(t, url));
+                        } else if (t.startsWith('#')) {
+                            newLines.push(resolveTagUris(line, url));
                         } else {
                             newLines.push(line);
                         }
@@ -143,8 +192,8 @@ See LICENSE file in repository root for full license text.
                 } else if (hasAds) {
                     // 第一步：动态探测主视频的帧率 (FPS Signature)
                     // 盗版网站正片和广告的压制规格往往不同（例如正片是24fps，广告是30fps）
-                    const commonFps = [23.976, 24, 25, 29.97, 30, 50, 60];
-                    const fpsCounts = { 23.976: 0, 24: 0, 25: 0, 29.97: 0, 30: 0, 50: 0, 60: 0 };
+                    const commonFps = [22.999, 23.976, 24.0, 25.0, 29.97, 30.0, 50.0, 59.94, 60.0];
+                    const fpsCounts = Object.fromEntries(commonFps.map(item => [item, 0]));
 
                     let allDurs = [];
                     for (let line of lines) {
@@ -177,13 +226,17 @@ See LICENSE file in repository root for full license text.
                     let finalLines = [];
                     let currentBlock = [];
                     let isAdBlock = false;
+                    let hasEndList = false;
 
                     const flushBlock = () => {
                         if (currentBlock.length > 0) {
                             if (!isAdBlock) {
                                 for (let l of currentBlock) {
-                                    if (!l.startsWith('#') && !l.startsWith('http') && !l.startsWith('blob:') && !l.startsWith('data:')) {
-                                        finalLines.push(new URL(l, url).href);
+                                    const t = l.trim();
+                                    if (t && !t.startsWith('#')) {
+                                        finalLines.push(toAbsoluteUrl(t, url));
+                                    } else if (t.startsWith('#')) {
+                                        finalLines.push(resolveTagUris(l, url));
                                     } else {
                                         finalLines.push(l);
                                     }
@@ -201,15 +254,21 @@ See LICENSE file in repository root for full license text.
                         // 全局标签直接保留
                         if (t.startsWith('#EXTM3U') || t.startsWith('#EXT-X-VERSION') ||
                             t.startsWith('#EXT-X-TARGETDURATION') || t.startsWith('#EXT-X-MEDIA-SEQUENCE') ||
-                            t.startsWith('#EXT-X-PLAYLIST-TYPE') || t.startsWith('#EXT-X-ENDLIST')) {
+                            t.startsWith('#EXT-X-PLAYLIST-TYPE')) {
                             finalLines.push(t);
+                            continue;
+                        }
+
+                        if (t.startsWith('#EXT-X-ENDLIST')) {
+                            hasEndList = true;
                             continue;
                         }
 
                         // 遇到不连续标签，结算上一个 Block
                         if (t.startsWith('#EXT-X-DISCONTINUITY')) {
                             flushBlock();
-                            currentBlock = [t];
+                            const hasSegments = finalLines.some(line => line.startsWith('#EXTINF:'));
+                            currentBlock = hasSegments ? [t] : [];
                             isAdBlock = false;
                             continue;
                         }
@@ -228,13 +287,18 @@ See LICENSE file in repository root for full license text.
                         }
                     }
                     flushBlock(); // 处理最后一个区块
+                    if (hasEndList) {
+                        finalLines.push('#EXT-X-ENDLIST');
+                    }
 
                     content = finalLines.join('\n');
                 } else {
                     for (let line of lines) {
                         let t = line.trim();
-                        if (t && !t.startsWith('#') && !t.startsWith('http')) {
-                            newLines.push(new URL(t, url).href);
+                        if (t && !t.startsWith('#')) {
+                            newLines.push(toAbsoluteUrl(t, url));
+                        } else if (t.startsWith('#')) {
+                            newLines.push(resolveTagUris(line, url));
                         } else {
                             newLines.push(line);
                         }
@@ -254,7 +318,10 @@ See LICENSE file in repository root for full license text.
     }
 
     XMLHttpRequest.prototype.open = function (m, url, ...args) {
-        if (disableMode === 'on' && !this.isInternalRequest && typeof url === 'string' && url.includes('m3u8')) {
+        if (typeof url === 'string') {
+            url = extractBlobUrl(url);
+        }
+        if (disableMode === 'on' && !this.isInternalRequest && typeof url === 'string' && url.includes('m3u8') && !url.startsWith('blob:')) {
             url = getPurifiedUrlSync(url);
         }
         return oldXhrOpen.apply(this, [m, url, ...args]);
@@ -262,6 +329,11 @@ See LICENSE file in repository root for full license text.
 
     window.fetch = function (input, init) {
         let url = (input instanceof Request) ? input.url : String(input);
+        const cleanUrl = extractBlobUrl(url);
+        if (cleanUrl !== url) {
+            input = (input instanceof Request) ? new Request(cleanUrl, input) : cleanUrl;
+            url = cleanUrl;
+        }
         if (disableMode === 'on' && !init?.isInternal && url.includes('m3u8') && !url.startsWith('blob:')) {
             url = getPurifiedUrlSync(url);
             input = (input instanceof Request) ? new Request(url, input) : url;
@@ -378,6 +450,7 @@ See LICENSE file in repository root for full license text.
             get: function () { return desc.get.call(this); },
             set: function (val) {
                 if (val && typeof val === 'string') {
+                    val = extractBlobUrl(val);
                     if (val.includes('m3u8') && !val.startsWith('blob:')) {
                         val = getPurifiedUrlSync(val);
                     }
@@ -395,7 +468,8 @@ See LICENSE file in repository root for full license text.
     if (window.HTMLSourceElement) hijackProperty(HTMLSourceElement.prototype, 'src');
 
     function checkAndCleanEl(el) {
-        const currentSrc = el.getAttribute('src') || el.src;
+        let currentSrc = el.getAttribute('src') || el.src;
+        if (currentSrc) currentSrc = extractBlobUrl(currentSrc);
         if (currentSrc && currentSrc.includes('m3u8') && !currentSrc.startsWith('blob:') && !el.dataset.cleaned) {
             el.dataset.cleaned = "true";
 

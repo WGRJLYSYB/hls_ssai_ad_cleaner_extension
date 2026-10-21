@@ -4,12 +4,12 @@
 [![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-green.svg)](https://developer.chrome.com/docs/extensions)
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-orange.svg)](https://developer.chrome.com/docs/extensions/mv3/intro/)
 
-专门针对 HLS (m3u8) 视频流的 **SSAI 广告拦截工具**。利用递归 Blob 代理技术和动态帧率指纹算法，深度净化主索引与变体索引，无损过滤隐藏广告。
+专门针对 HLS (m3u8) 视频流的 **SSAI 广告拦截工具**。利用 Blob URL 代理和动态帧率指纹算法，按请求净化主索引与变体索引，无损过滤隐藏广告。
 
 ## ✨ 功能特性
 
 - 🎯 **精准拦截**: 专门针对 HLS 流媒体中的服务器端广告插入 (SSAI)
-- 🔍 **深度净化**: 递归处理 m3u8 索引文件和所有子资源
+- 🔍 **深度净化**: 按请求处理主索引、变体索引及其 URI 子资源，修正相对地址
 - 🚀 **高性能**: 基于帧率指纹识别算法，快速定位广告片段
 - 🔒 **隐私保护**: 纯本地运行，无需后端服务，不收集用户数据
 - 🌐 **广泛兼容**: 支持所有使用 HLS 协议的流媒体网站
@@ -19,7 +19,7 @@
 
 ### 核心技术
 - **Manifest V3**: 采用最新的 Chrome 扩展规范
-- **Blob URL 代理**: 通过递归 Blob 转换绕过浏览器原生请求限制
+- **Blob URL 代理**: 净化播放列表后通过 Blob URL 代理，并修复播放器拼接错误的 Blob 地址
 - **帧率指纹算法**: 智能识别广告片段的特征模式
 - **双世界注入**: 结合 ISOLATED 和 MAIN world 实现完整 API 劫持
 

@@ -45,12 +45,12 @@ async function ensureTabMode(tabId, url) {
 
   try {
     await chrome.scripting.executeScript({
-      target: { tabId, allFrames: false },
+      target: { tabId, allFrames: true },
       files: ['src/loader.js']
     });
 
     await chrome.scripting.executeScript({
-      target: { tabId, allFrames: false },
+      target: { tabId, allFrames: true },
       files: ['src/content.js'],
       world: 'MAIN'
     });
